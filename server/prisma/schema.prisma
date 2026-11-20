@@ -1,0 +1,112 @@
+// MiniLearn data model. SQLite keeps the demo zero-setup; the shape maps 1:1 to Postgres.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String
+  email         String       @unique
+  passwordHash  String
+  role          Role         @default(STUDENT)
+  isAdmin       Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  courses       Course[]
+  enrollments   Enrollment[]
+  quizAttempts  QuizAttempt[]
+}
+
+model Course {
+  id            String       @id @default(cuid())
+  title         String
+  description   String
+  price         Int          @default(0)
+  thumbnailUrl  String?
+  liveClassAt   DateTime?
+  instructorId  String
+  instructor    User         @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  lessons       Lesson[]
+  quiz          Quiz?
+  enrollments   Enrollment[]
+  createdAt     DateTime     @default(now())
+}
+
+model Lesson {
+  id            String             @id @default(cuid())
+  courseId      String
+  course        Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title         String
+  videoUrl      String
+  durationMin   Int?
+  position      Int                @default(0)
+  completions   LessonCompletion[]
+  createdAt     DateTime           @default(now())
+}
+
+model Enrollment {
+  id            String             @id @default(cuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId      String
+  course        Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  paymentRef    String?
+  enrolledAt    DateTime           @default(now())
+  completions   LessonCompletion[]
+
+  @@unique([userId, courseId])
+}
+
+model LessonCompletion {
+  id            String     @id @default(cuid())
+  enrollmentId  String
+  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lessonId      String
+  lesson        Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completedAt   DateTime   @default(now())
+
+  @@unique([enrollmentId, lessonId])
+}
+
+model Quiz {
+  id            String        @id @default(cuid())
+  courseId      String        @unique
+  course        Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title         String        @default("Course quiz")
+  passPercent   Int           @default(60)
+  questions     Question[]
+  attempts      QuizAttempt[]
+}
+
+model Question {
+  id            String  @id @default(cuid())
+  quizId        String
+  quiz          Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  text          String
+  options       String
+  correctIndex  Int
+  position      Int     @default(0)
+}
+
+model QuizAttempt {
+  id            String   @id @default(cuid())
+  quizId        String
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score         Int
+  total         Int
+  percent       Int
+  passed        Boolean
+  answers       String
+  createdAt     DateTime @default(now())
+}

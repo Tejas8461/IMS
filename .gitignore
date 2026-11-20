@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build files
+dist/
+coverage/
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Screenshots
+screenshots/
